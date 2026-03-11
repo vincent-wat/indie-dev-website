@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 import { prisma } from "./db";
+import { signToken } from "./jwt";
 
 export const authRouter = Router();
 
@@ -27,11 +28,16 @@ authRouter.post("/login", async (req, res) => {
   if (!ok) {
     return res.status(401).json({ error: "Invalid credentials" });
   }
+  
+  const token = signToken({ id: user.id, role: user.role });
 
   return res.json({
-    id: user.id,
-    email: user.email,
-    displayName: user.displayName,
-    role: user.role
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      role: user.role
+    }
   });
 });
