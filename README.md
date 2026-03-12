@@ -24,7 +24,7 @@ This repo contains:
 ---
 
 ## Tech Stack
-- Frontend: **Next.js + TypeScript** (`apps/web`)
+- Frontend: **Next.js (React) + TypeScript** (`apps/web`)
 - Backend: **Node.js + Express + TypeScript** (`apps/api`)
 - Database: **PostgreSQL** (Docker Compose)
 - ORM: **Prisma**
