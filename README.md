@@ -79,20 +79,20 @@ curl -s -X POST http://localhost:4000/auth/login \
 **Display Bug List**
 
 curl -s http://localhost:4000/playtest/bugs \
-  -H "Authorization: Bearer <TOKEN>"
+  -H "Authorization: Bearer (TOKEN)"
 
 **Create Bug Report**
 
 curl -s -X POST http://localhost:4000/playtest/bugs \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <TOKEN>" \
+  -H "Authorization: Bearer (TOKEN)" \
   -d '{"title":"Inventory freezes","description":"Game freezes when opening inventory after 10 minutes.","severity":"high"}'
 
 **Update Status of a Bug**
 
 curl -s -X PATCH http://localhost:4000/playtest/bugs/<BUG_ID>/status \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>" \
+  -H "Authorization: Bearer (STAFF/ADMIN TOKEN)" \
   -d '{"status":"triaged"}'
 
 
