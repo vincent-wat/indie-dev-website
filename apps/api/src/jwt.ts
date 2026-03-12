@@ -1,5 +1,7 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 
+// This JWT utility module signs and verifies tokens
+
 export type JwtUser = {
   id: string;
   role: "playtester" | "staff" | "admin";
@@ -13,13 +15,17 @@ function getJwtSecret() {
   return secret;
 }
 
+// takes id+role, creates token string signed by my JWT_SECRET, expiration time is 7 days
 export function signToken(user: JwtUser) {
   return jwt.sign(user, getJwtSecret(), { expiresIn: "7d" });
 }
 
+// verify if a token was signed by my JWT_SECRET
 export function verifyToken(token: string): JwtUser {
+  // verification 
   const decoded = jwt.verify(token, getJwtSecret());
 
+  // should return as JwTPayload, if not then throw error
   if (typeof decoded === "string") {
     throw new Error("Invalid token payload");
   }
@@ -29,6 +35,7 @@ export function verifyToken(token: string): JwtUser {
   const id = payload.id;
   const role = payload.role;
 
+  // extra precautions to ensure there is an id + role
   if (typeof id !== "string") {
     throw new Error("Invalid token payload: missing id");
   }

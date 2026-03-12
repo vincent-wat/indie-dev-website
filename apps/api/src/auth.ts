@@ -4,6 +4,8 @@ import { z } from "zod";
 import { prisma } from "./db";
 import { signToken } from "./jwt";
 
+// This auth router defines the login endpoint
+
 export const authRouter = Router();
 
 const loginSchema = z.object({
