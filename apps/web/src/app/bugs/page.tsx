@@ -1,32 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import styles from "./bugs.module.css";
 
-type Role = "playtester" | "staff" | "admin";
-
-type LoginResponse = {
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    displayName: string;
-    role: Role;
-  };
-};
-
-type Bug = {
-  id: string;
-  title: string;
-  description: string;
-  stepsToReproduce: string | null;
-  expectedResult: string | null;
-  actualResult: string | null;
-  severity: "low" | "medium" | "high" | "critical";
-  status: "new" | "triaged" | "in_progress" | "fixed" | "verified" | "closed";
-  reporterId: string;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { Bug, LoginResponse } from "./types";
+import AuthPanel from "./components/AuthPanel";
+import BugTable from "./components/BugTable";
+import SubmitBugModal from "./components/SubmitBugModal";
 
 const API_BASE = "http://localhost:4000";
 
@@ -55,6 +35,8 @@ export default function BugsPage() {
   const [bugs, setBugs] = useState<Bug[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [displayName, setDisplayName] = useState("New Tester");
   const [email, setEmail] = useState("tester@demo.com");
   const [password, setPassword] = useState("password");
 
@@ -70,18 +52,24 @@ export default function BugsPage() {
     if (existing) setAuth(existing);
   }, []);
 
-  async function login() {
+  async function authSubmit() {
     setLoading(true);
     setError(null);
+
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const endpoint = mode === "signup" ? "/auth/signup" : "/auth/login";
+      const body = mode === "signup" ? { email, password, displayName } : { email, password };
+
+      const res = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(body)
       });
 
       if (!res.ok) {
-        setError("Login failed. Check email/password.");
+        if (mode === "signup" && res.status === 409) setError("That email is already in use.");
+        else if (mode === "signup") setError("Signup failed. Check inputs (password must be 8+ chars).");
+        else setError("Login failed. Check email/password.");
         return;
       }
 
@@ -89,7 +77,7 @@ export default function BugsPage() {
       saveAuth(data.token, data.user);
       setAuth({ token: data.token, user: data.user });
     } catch {
-      setError("Network error while logging in.");
+      setError("Network error.");
     } finally {
       setLoading(false);
     }
@@ -129,10 +117,7 @@ export default function BugsPage() {
     try {
       const res = await fetch(`${API_BASE}/playtest/bugs`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${auth.token}`
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({ title, description, severity })
       });
 
@@ -161,10 +146,7 @@ export default function BugsPage() {
     try {
       const res = await fetch(`${API_BASE}/playtest/bugs/${bugId}/status`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${auth.token}`
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({ status })
       });
 
@@ -190,192 +172,61 @@ export default function BugsPage() {
 
   if (!auth) {
     return (
-      <div style={{ maxWidth: 520, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
-        <h1 style={{ margin: 0 }}>Playtest Bugs</h1>
-        <p style={{ margin: 0, opacity: 0.8 }}>
-          Log in to submit and view bug reports.
-        </p>
-
-        <div style={{ display: "grid", gap: 10, border: "1px solid #eee", borderRadius: 12, padding: 12 }}>
-          <label style={{ display: "grid", gap: 6 }}>
-            <span>Email</span>
-            <input value={email} onChange={(e) => setEmail(e.target.value)} style={{ padding: 10, borderRadius: 10, border: "1px solid #ddd" }} />
-          </label>
-
-          <label style={{ display: "grid", gap: 6 }}>
-            <span>Password</span>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ padding: 10, borderRadius: 10, border: "1px solid #ddd" }} />
-          </label>
-
-          <button
-            onClick={login}
-            disabled={loading}
-            style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd", cursor: "pointer", fontWeight: 700 }}
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-
-          <div style={{ fontSize: 12, opacity: 0.75 }}>
-            Demo: tester@demo.com / password, staff@demo.com / password
-          </div>
-
-          {error && <div style={{ color: "crimson" }}>{error}</div>}
-        </div>
-      </div>
+      <AuthPanel
+        mode={mode}
+        setMode={setMode}
+        displayName={displayName}
+        setDisplayName={setDisplayName}
+        email={email}
+        setEmail={setEmail}
+        password={password}
+        setPassword={setPassword}
+        loading={loading}
+        error={error}
+        onSubmit={authSubmit}
+      />
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+    <div className={styles.page}>
+      <div className={styles.headerRow}>
         <div>
-          <h1 style={{ margin: 0 }}>Playtest Bugs</h1>
-          <div style={{ opacity: 0.75 }}>
-            Logged in as <strong>{auth.user.displayName}</strong> ({auth.user.role})
+          <h1 className={styles.h1}>Playtest Bugs</h1>
+          <div className={styles.smallNote}>
+            Logged in as <span className={styles.bold}>{auth.user.displayName}</span> ({auth.user.role})
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            onClick={() => setShowModal(true)}
-            style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd", cursor: "pointer", fontWeight: 700 }}
-          >
+        <div className={styles.rightActions}>
+          <button onClick={() => setShowModal(true)} className={styles.secondaryBtn}>
             Submit a bug
           </button>
-          <button
-            onClick={() => fetchBugs(auth.token)}
-            disabled={loading}
-            style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd", cursor: "pointer" }}
-          >
+          <button onClick={() => fetchBugs(auth.token)} disabled={loading} className={styles.primaryBtn}>
             Refresh
           </button>
-          <button
-            onClick={logout}
-            style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd", cursor: "pointer" }}
-          >
+          <button onClick={logout} className={styles.primaryBtn}>
             Logout
           </button>
         </div>
       </div>
 
-      {error && <div style={{ color: "crimson" }}>{error}</div>}
+      {error && <div className={styles.error}>{error}</div>}
 
-      <div style={{ border: "1px solid #eee", borderRadius: 12, overflow: "hidden" }}>
-        <div style={{ display: "grid", gridTemplateColumns: isStaff ? "2fr 3fr 1fr 1fr" : "2fr 3fr 1fr", gap: 0, padding: 12, background: "#fafafa", fontWeight: 700 }}>
-          <div>Title</div>
-          <div>Description</div>
-          <div>Status</div>
-          {isStaff && <div>Severity</div>}
-        </div>
+      <BugTable bugs={bugs} isStaff={isStaff} onUpdateStatus={updateStatus} />
 
-        {bugs.length === 0 ? (
-          <div style={{ padding: 12, opacity: 0.75 }}>No bug reports yet.</div>
-        ) : (
-          bugs.map((b) => (
-            <div key={b.id} style={{ display: "grid", gridTemplateColumns: isStaff ? "2fr 3fr 1fr 1fr" : "2fr 3fr 1fr", padding: 12, borderTop: "1px solid #eee", gap: 12 }}>
-              <div style={{ fontWeight: 700 }}>{b.title}</div>
-              <div style={{ opacity: 0.85, lineHeight: 1.4 }}>{b.description}</div>
-
-              <div>
-                {isStaff ? (
-                  <select
-                    value={b.status}
-                    onChange={(e) => updateStatus(b.id, e.target.value as Bug["status"])}
-                    style={{ padding: 8, borderRadius: 10, border: "1px solid #ddd" }}
-                  >
-                    <option value="new">new</option>
-                    <option value="triaged">triaged</option>
-                    <option value="in_progress">in_progress</option>
-                    <option value="fixed">fixed</option>
-                    <option value="verified">verified</option>
-                    <option value="closed">closed</option>
-                  </select>
-                ) : (
-                  <span>{b.status}</span>
-                )}
-              </div>
-
-              {isStaff && <div>{b.severity}</div>}
-            </div>
-          ))
-        )}
-      </div>
-
-      {showModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.35)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 16
-          }}
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            style={{ background: "white", width: "100%", maxWidth: 520, borderRadius: 14, padding: 14, border: "1px solid #eee" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-              <div style={{ fontWeight: 800, fontSize: 18 }}>Submit a bug</div>
-              <button
-                onClick={() => setShowModal(false)}
-                style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #ddd", cursor: "pointer" }}
-              >
-                Close
-              </button>
-            </div>
-
-            <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
-              <label style={{ display: "grid", gap: 6 }}>
-                <span>Title</span>
-                <input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  style={{ padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
-                />
-              </label>
-
-              <label style={{ display: "grid", gap: 6 }}>
-                <span>Description</span>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={5}
-                  style={{ padding: 10, borderRadius: 10, border: "1px solid #ddd", resize: "vertical" }}
-                />
-              </label>
-
-              <label style={{ display: "grid", gap: 6 }}>
-                <span>Severity</span>
-                <select
-                  value={severity}
-                  onChange={(e) => setSeverity(e.target.value as Bug["severity"])}
-                  style={{ padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
-                >
-                  <option value="low">low</option>
-                  <option value="medium">medium</option>
-                  <option value="high">high</option>
-                  <option value="critical">critical</option>
-                </select>
-              </label>
-
-              <button
-                onClick={submitBug}
-                disabled={loading || title.trim().length < 3 || description.trim().length < 10}
-                style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd", cursor: "pointer", fontWeight: 800 }}
-              >
-                {loading ? "Submitting..." : "Submit"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SubmitBugModal
+        open={showModal}
+        loading={loading}
+        title={title}
+        setTitle={setTitle}
+        description={description}
+        setDescription={setDescription}
+        severity={severity}
+        setSeverity={setSeverity}
+        onClose={() => setShowModal(false)}
+        onSubmit={submitBug}
+      />
     </div>
   );
 }
