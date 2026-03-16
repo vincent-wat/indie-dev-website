@@ -7,6 +7,7 @@ import type { Bug, LoginResponse } from "./types";
 import AuthPanel from "./components/AuthPanel";
 import BugTable from "./components/BugTable";
 import SubmitBugModal from "./components/SubmitBugModal";
+import FiltersBar from "./components/FiltersBar";
 
 const API_BASE = "http://localhost:4000";
 
@@ -45,6 +46,13 @@ export default function BugsPage() {
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState<Bug["severity"]>("medium");
 
+  // Filter States
+  const [statusFilter, setStatusFilter] = useState<Bug["status"] | "">("");
+  const [severityFilter, setSeverityFilter] = useState<Bug["severity"] | "">("");
+
+  // Token Expire States
+  const [sessionMsg, setSessionMsg] = useState<string | null>(null);
+
   const isStaff = useMemo(() => auth?.user.role === "staff" || auth?.user.role === "admin", [auth]);
 
   useEffect(() => {
@@ -76,6 +84,7 @@ export default function BugsPage() {
       const data = (await res.json()) as LoginResponse;
       saveAuth(data.token, data.user);
       setAuth({ token: data.token, user: data.user });
+      setSessionMsg(null);
     } catch {
       setError("Network error.");
     } finally {
@@ -84,30 +93,42 @@ export default function BugsPage() {
   }
 
   async function fetchBugs(token: string) {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API_BASE}/playtest/bugs`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+  setLoading(true);
+  setError(null);
 
-      if (!res.ok) {
-        setError("Failed to fetch bug reports.");
-        return;
-      }
+  const params = new URLSearchParams();
+  if (statusFilter) params.set("status", statusFilter);
+  if (severityFilter) params.set("severity", severityFilter);
 
-      const data = (await res.json()) as Bug[];
-      setBugs(data);
-    } catch {
-      setError("Network error while fetching bug reports.");
-    } finally {
-      setLoading(false);
+  const url = `${API_BASE}/playtest/bugs${params.toString() ? `?${params.toString()}` : ""}`;
+
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (res.status === 401) {
+      logout("Session expired. Please log in again.");
+      return;
     }
+
+    if (!res.ok) {
+      setError("Failed to fetch bug reports.");
+      return;
+    }
+
+    const data = (await res.json()) as Bug[];
+    setBugs(data);
+  } catch {
+    setError("Network error while fetching bug reports.");
+  } finally {
+    setLoading(false);
   }
+}
 
   useEffect(() => {
-    if (auth?.token) fetchBugs(auth.token);
-  }, [auth?.token]);
+  if (auth?.token) fetchBugs(auth.token);
+}, [auth?.token, statusFilter, severityFilter]);
 
   async function submitBug() {
     if (!auth?.token) return;
@@ -120,6 +141,11 @@ export default function BugsPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({ title, description, severity })
       });
+
+      if (res.status === 401) {
+        logout("Session expired. Please log in again.");
+       return;
+      }
 
       if (!res.ok) {
         setError("Failed to submit bug. Make sure title/description are long enough.");
@@ -150,6 +176,11 @@ export default function BugsPage() {
         body: JSON.stringify({ status })
       });
 
+      if (res.status === 401) {
+        logout("Session expired. Please log in again.");
+      return;
+      }
+
       if (!res.ok) {
         setError("Failed to update status (staff/admin only).");
         return;
@@ -163,15 +194,17 @@ export default function BugsPage() {
     }
   }
 
-  function logout() {
+  function logout(message?: string) {
     clearAuth();
     setAuth(null);
     setBugs([]);
     setError(null);
+    setSessionMsg(message ?? null);
   }
 
   if (!auth) {
-    return (
+  return (
+    <div className={`${styles.page} ${styles.centered}`}>
       <AuthPanel
         mode={mode}
         setMode={setMode}
@@ -185,8 +218,18 @@ export default function BugsPage() {
         error={error}
         onSubmit={authSubmit}
       />
-    );
-  }
+
+      {sessionMsg && (
+        <div
+          className={styles.smallNote}
+          style={{ marginTop: 12, textAlign: "center" }}
+        >
+          {sessionMsg}
+        </div>
+      )}
+    </div>
+  );
+}
 
   return (
     <div className={styles.page}>
@@ -205,13 +248,26 @@ export default function BugsPage() {
           <button onClick={() => fetchBugs(auth.token)} disabled={loading} className={styles.primaryBtn}>
             Refresh
           </button>
-          <button onClick={logout} className={styles.primaryBtn}>
+          <button onClick={() => logout()} className={styles.primaryBtn}>
             Logout
           </button>
         </div>
       </div>
 
       {error && <div className={styles.error}>{error}</div>}
+
+      <FiltersBar
+          status={statusFilter}
+          setStatus={setStatusFilter}
+          severity={severityFilter}
+          setSeverity={setSeverityFilter}
+          loading={loading}
+          onClear={() => {
+            setStatusFilter("");
+            setSeverityFilter("");
+          }}
+          onRefresh={() => fetchBugs(auth.token)}
+      />
 
       <BugTable bugs={bugs} isStaff={isStaff} onUpdateStatus={updateStatus} />
 

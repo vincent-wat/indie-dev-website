@@ -52,6 +52,25 @@ staff@demo.com (staff)
 
 tester@demo.com (playtester)
 
+## Core Commands
+**Run Frontend**
+
+```
+npm run dev -w apps/web
+```
+
+**Run Backend**
+
+```
+npm run dev -w apps/api
+```
+
+**Run Postgres Database**
+
+```
+docker compose up -d
+```
+
 ## Current API
 **Health**
 
