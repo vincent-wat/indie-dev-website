@@ -57,10 +57,6 @@ export default function FiltersBar({
       </button>
 
       <div className={styles.spacer} />
-
-      <button onClick={onRefresh} className={styles.primaryBtn} disabled={loading}>
-        {loading ? "Loading..." : "Refresh"}
-      </button>
     </div>
   );
 }

@@ -1,20 +1,32 @@
+import { DynaPuff } from "next/font/google";
+
 export const metadata = {
   title: "Pippy Studios",
   description: "Indie game studio — projects and playtest bug reporting."
 };
 
+const dynaPuff = DynaPuff({
+  weight: ["400", "700"],
+  subsets: ["latin"]
+});
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Arial" }}>
+      <body 
+        className={dynaPuff.className}
+        style={{ margin: 0, fontFamily: `"DynaPuff", system-ui, -apple-system, Segoe UI, Roboto, Arial` }}>
         <header style={{ borderBottom: "1px solid #eee", padding: "12px 16px" }}>
           <nav style={{ display: "flex", gap: 16, alignItems: "center" }}>
             <a href="/" style={{ fontWeight: 700, textDecoration: "none", color: "inherit" }}>
               Pippy Studios
             </a>
-            <a href="/" style={{ textDecoration: "none", color: "inherit" }}>Home</a>
-            <a href="/about" style={{ textDecoration: "none", color: "inherit" }}>About</a>
-            <a href="/bugs" style={{ textDecoration: "none", color: "inherit" }}>Bugs</a>
+
+            <div style={{marginLeft: "auto", display: "flex", gap: 32 }}>
+              <a href="/" style={{ textDecoration: "none", color: "inherit" }}>Home</a>
+              <a href="/about" style={{ textDecoration: "none", color: "inherit" }}>About</a>
+              <a href="/bugs" style={{ textDecoration: "none", color: "inherit" }}>Bugs</a>
+            </div>
           </nav>
         </header>
 
