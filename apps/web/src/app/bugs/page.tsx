@@ -9,7 +9,7 @@ import BugTable from "./components/BugTable";
 import SubmitBugModal from "./components/SubmitBugModal";
 import FiltersBar from "./components/FiltersBar";
 
-const API_BASE = "http://localhost:4000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 function loadAuth() {
   if (typeof window === "undefined") return null;
