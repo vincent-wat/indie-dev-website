@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "./bugs.module.css";
 
-import type { Bug, LoginResponse } from "./types";
+import type { Bug, AuthResponse } from "./types";
 import AuthPanel from "./components/AuthPanel";
 import BugTable from "./components/BugTable";
 import SubmitBugModal from "./components/SubmitBugModal";
@@ -11,27 +11,8 @@ import FiltersBar from "./components/FiltersBar";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-function loadAuth() {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem("pippy_auth");
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as { token: string; user: LoginResponse["user"] };
-  } catch {
-    return null;
-  }
-}
-
-function saveAuth(token: string, user: LoginResponse["user"]) {
-  localStorage.setItem("pippy_auth", JSON.stringify({ token, user }));
-}
-
-function clearAuth() {
-  localStorage.removeItem("pippy_auth");
-}
-
 export default function BugsPage() {
-  const [auth, setAuth] = useState<{ token: string; user: LoginResponse["user"] } | null>(null);
+  const [user, setUser] = useState<AuthResponse["user"] | null>(null);
   const [loading, setLoading] = useState(false);
   const [bugs, setBugs] = useState<Bug[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -46,18 +27,40 @@ export default function BugsPage() {
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState<Bug["severity"]>("medium");
 
-  // Filter States
   const [statusFilter, setStatusFilter] = useState<Bug["status"] | "">("");
   const [severityFilter, setSeverityFilter] = useState<Bug["severity"] | "">("");
 
-  // Token Expire States
   const [sessionMsg, setSessionMsg] = useState<string | null>(null);
 
-  const isStaff = useMemo(() => auth?.user.role === "staff" || auth?.user.role === "admin", [auth]);
+  const isStaff = useMemo(() => user?.role === "staff" || user?.role === "admin", [user]);
+
+  async function logout(message?: string) {
+    try {
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch {
+      // ignore
+    }
+
+    setUser(null);
+    setBugs([]);
+    setError(null);
+    setSessionMsg(message ?? null);
+  }
 
   useEffect(() => {
-    const existing = loadAuth();
-    if (existing) setAuth(existing);
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
+        if (!res.ok) return;
+        const data = (await res.json()) as AuthResponse;
+        setUser(data.user);
+      } catch {
+        // ignore
+      }
+    })();
   }, []);
 
   async function authSubmit() {
@@ -71,6 +74,7 @@ export default function BugsPage() {
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(body)
       });
 
@@ -81,9 +85,8 @@ export default function BugsPage() {
         return;
       }
 
-      const data = (await res.json()) as LoginResponse;
-      saveAuth(data.token, data.user);
-      setAuth({ token: data.token, user: data.user });
+      const data = (await res.json()) as AuthResponse;
+      setUser(data.user);
       setSessionMsg(null);
     } catch {
       setError("Network error.");
@@ -92,59 +95,58 @@ export default function BugsPage() {
     }
   }
 
-  async function fetchBugs(token: string) {
-  setLoading(true);
-  setError(null);
+  async function fetchBugs() {
+    setLoading(true);
+    setError(null);
 
-  const params = new URLSearchParams();
-  if (statusFilter) params.set("status", statusFilter);
-  if (severityFilter) params.set("severity", severityFilter);
+    const params = new URLSearchParams();
+    if (statusFilter) params.set("status", statusFilter);
+    if (severityFilter) params.set("severity", severityFilter);
 
-  const url = `${API_BASE}/playtest/bugs${params.toString() ? `?${params.toString()}` : ""}`;
+    const url = `${API_BASE}/playtest/bugs${params.toString() ? `?${params.toString()}` : ""}`;
 
-  try {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    try {
+      const res = await fetch(url, { credentials: "include" });
 
-    if (res.status === 401) {
-      logout("Session expired. Please log in again.");
-      return;
+      if (res.status === 401) {
+        await logout("Session expired. Please log in again.");
+        return;
+      }
+
+      if (!res.ok) {
+        setError("Failed to fetch bug reports.");
+        return;
+      }
+
+      const data = (await res.json()) as Bug[];
+      setBugs(data);
+    } catch {
+      setError("Network error while fetching bug reports.");
+    } finally {
+      setLoading(false);
     }
-
-    if (!res.ok) {
-      setError("Failed to fetch bug reports.");
-      return;
-    }
-
-    const data = (await res.json()) as Bug[];
-    setBugs(data);
-  } catch {
-    setError("Network error while fetching bug reports.");
-  } finally {
-    setLoading(false);
   }
-}
 
   useEffect(() => {
-  if (auth?.token) fetchBugs(auth.token);
-}, [auth?.token, statusFilter, severityFilter]);
+    if (user) fetchBugs();
+  }, [user, statusFilter, severityFilter]);
 
   async function submitBug() {
-    if (!auth?.token) return;
+    if (!user) return;
 
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(`${API_BASE}/playtest/bugs`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token}` },
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, description, severity })
       });
 
       if (res.status === 401) {
-        logout("Session expired. Please log in again.");
-       return;
+        await logout("Session expired. Please log in again.");
+        return;
       }
 
       if (!res.ok) {
@@ -156,7 +158,7 @@ export default function BugsPage() {
       setDescription("");
       setSeverity("medium");
       setShowModal(false);
-      await fetchBugs(auth.token);
+      await fetchBugs();
     } catch {
       setError("Network error while submitting bug.");
     } finally {
@@ -165,20 +167,21 @@ export default function BugsPage() {
   }
 
   async function updateStatus(bugId: string, status: Bug["status"]) {
-    if (!auth?.token) return;
+    if (!user) return;
 
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(`${API_BASE}/playtest/bugs/${bugId}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.token}` },
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status })
       });
 
       if (res.status === 401) {
-        logout("Session expired. Please log in again.");
-      return;
+        await logout("Session expired. Please log in again.");
+        return;
       }
 
       if (!res.ok) {
@@ -186,7 +189,7 @@ export default function BugsPage() {
         return;
       }
 
-      await fetchBugs(auth.token);
+      await fetchBugs();
     } catch {
       setError("Network error while updating status.");
     } finally {
@@ -194,42 +197,31 @@ export default function BugsPage() {
     }
   }
 
-  function logout(message?: string) {
-    clearAuth();
-    setAuth(null);
-    setBugs([]);
-    setError(null);
-    setSessionMsg(message ?? null);
+  if (!user) {
+    return (
+      <div className={`${styles.page} ${styles.centered}`}>
+        <AuthPanel
+          mode={mode}
+          setMode={setMode}
+          displayName={displayName}
+          setDisplayName={setDisplayName}
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          loading={loading}
+          error={error}
+          onSubmit={authSubmit}
+        />
+
+        {sessionMsg && (
+          <div className={styles.smallNote} style={{ marginTop: 12, textAlign: "center" }}>
+            {sessionMsg}
+          </div>
+        )}
+      </div>
+    );
   }
-
-  if (!auth) {
-  return (
-    <div className={`${styles.page} ${styles.centered}`}>
-      <AuthPanel
-        mode={mode}
-        setMode={setMode}
-        displayName={displayName}
-        setDisplayName={setDisplayName}
-        email={email}
-        setEmail={setEmail}
-        password={password}
-        setPassword={setPassword}
-        loading={loading}
-        error={error}
-        onSubmit={authSubmit}
-      />
-
-      {sessionMsg && (
-        <div
-          className={styles.smallNote}
-          style={{ marginTop: 12, textAlign: "center" }}
-        >
-          {sessionMsg}
-        </div>
-      )}
-    </div>
-  );
-}
 
   return (
     <div className={styles.page}>
@@ -237,7 +229,7 @@ export default function BugsPage() {
         <div>
           <h1 className={styles.h1}>Playtest Bugs</h1>
           <div className={styles.smallNote}>
-            Logged in as <span className={styles.bold}>{auth.user.displayName}</span> ({auth.user.role})
+            Logged in as <span className={styles.bold}>{user.displayName}</span> ({user.role})
           </div>
         </div>
 
@@ -245,7 +237,7 @@ export default function BugsPage() {
           <button onClick={() => setShowModal(true)} className={styles.secondaryBtn}>
             Submit a bug
           </button>
-          <button onClick={() => fetchBugs(auth.token)} disabled={loading} className={styles.primaryBtn}>
+          <button onClick={() => fetchBugs()} disabled={loading} className={styles.primaryBtn}>
             Refresh
           </button>
           <button onClick={() => logout()} className={styles.primaryBtn}>
@@ -257,19 +249,19 @@ export default function BugsPage() {
       {error && <div className={styles.error}>{error}</div>}
 
       <FiltersBar
-          status={statusFilter}
-          setStatus={setStatusFilter}
-          severity={severityFilter}
-          setSeverity={setSeverityFilter}
-          loading={loading}
-          onClear={() => {
-            setStatusFilter("");
-            setSeverityFilter("");
-          }}
-          onRefresh={() => fetchBugs(auth.token)}
+        status={statusFilter}
+        setStatus={setStatusFilter}
+        severity={severityFilter}
+        setSeverity={setSeverityFilter}
+        loading={loading}
+        onClear={() => {
+          setStatusFilter("");
+          setSeverityFilter("");
+        }}
+        onRefresh={() => fetchBugs()}
       />
 
-      <BugTable bugs={bugs} isStaff={isStaff} onUpdateStatus={updateStatus} />
+      <BugTable bugs={bugs} isStaff={!!isStaff} onUpdateStatus={updateStatus} />
 
       <SubmitBugModal
         open={showModal}

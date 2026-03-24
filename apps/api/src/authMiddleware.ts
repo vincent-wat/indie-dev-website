@@ -7,13 +7,12 @@ export type AuthedRequest = Request & { user?: JwtUser };
 
 export function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
-  // return error if request does not have authorization header or does not start with "Bearer "
-  if (!header || !header.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Missing auth token" });
-  }
+  const tokenFromHeader = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : null;
+  const tokenFromCookie = (req as any).cookies?.pippy_session;
 
-  const token = header.slice("Bearer ".length);
-
+  const token = tokenFromCookie || tokenFromHeader;
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+  
   // attach id + role then continues to endpoint if token is valid, otherwise return 401 error (unauthorized)
   try {
     req.user = verifyToken(token);

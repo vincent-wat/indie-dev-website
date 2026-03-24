@@ -1,7 +1,6 @@
 export type Role = "playtester" | "staff" | "admin";
 
-export type LoginResponse = {
-  token: string;
+export type AuthResponse = {
   user: {
     id: string;
     email: string;

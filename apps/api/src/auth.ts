@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import { prisma } from "./db";
 import { signToken } from "./jwt";
+import { requireAuth, AuthedRequest } from "./authMiddleware";
 
 // This auth router defines the login endpoint
 
@@ -17,6 +18,38 @@ const signupSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   displayName: z.string().min(2).max(50)
+});
+
+const isProd = process.env.NODE_ENV === "production";
+
+authRouter.get("/me", requireAuth, async (req: AuthedRequest, res) => {
+  const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+  return res.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      role: user.role
+    }
+  });
+});
+
+// helper to be called before /login and /signup sucess
+function setSessionCookie(res: any, token: string) {
+  res.cookie("pippy_session", token, {
+    httpOnly: true,
+    secure: isProd,      
+    sameSite: "lax",  
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+}
+
+authRouter.post("/logout", (req, res) => {
+  res.clearCookie("pippy_session", { path: "/" });
+  return res.json({ ok: true });
 });
 
 authRouter.post("/login", async (req, res) => {
@@ -39,8 +72,8 @@ authRouter.post("/login", async (req, res) => {
   
   const token = signToken({ id: user.id, role: user.role });
 
+  setSessionCookie(res,token);
   return res.json({
-    token,
     user: {
       id: user.id,
       email: user.email,
@@ -76,8 +109,8 @@ authRouter.post("/signup", async (req, res) => {
 
   const token = signToken({ id: user.id, role: user.role });
 
+  setSessionCookie(res,token);
   return res.status(201).json({
-    token,
     user: {
       id: user.id,
       email: user.email,
@@ -85,4 +118,7 @@ authRouter.post("/signup", async (req, res) => {
       role: user.role
     }
   });
+
+  
+
 });
