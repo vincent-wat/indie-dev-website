@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "./db";
 import { signToken } from "./jwt";
 import { requireAuth, AuthedRequest } from "./authMiddleware";
+import { ensureCsrfCookie, requireCsrf } from "./csrf";
 
 // This auth router defines the login endpoint
 
@@ -36,6 +37,10 @@ authRouter.get("/me", requireAuth, async (req: AuthedRequest, res) => {
   });
 });
 
+authRouter.get("/csrf", ensureCsrfCookie, (req, res) => {
+  return res.json({ ok: true });
+});
+
 // helper to be called before /login and /signup sucess
 function setSessionCookie(res: any, token: string) {
   res.cookie("pippy_session", token, {
@@ -47,12 +52,12 @@ function setSessionCookie(res: any, token: string) {
   });
 }
 
-authRouter.post("/logout", (req, res) => {
+authRouter.post("/logout", ensureCsrfCookie, requireCsrf, (req, res) => {
   res.clearCookie("pippy_session", { path: "/" });
   return res.json({ ok: true });
 });
 
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/login", ensureCsrfCookie, requireCsrf, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid input" });
@@ -83,7 +88,7 @@ authRouter.post("/login", async (req, res) => {
   });
 });
 
-authRouter.post("/signup", async (req, res) => {
+authRouter.post("/signup", ensureCsrfCookie, requireCsrf, async (req, res) => {
   const parsed = signupSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid input" });

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "./db";
 import { requireAuth, AuthedRequest } from "./authMiddleware";
+import { ensureCsrfCookie, requireCsrf } from "./csrf";
 
 // This bugs router defines the playtest bug report endpoints
 
@@ -36,7 +37,7 @@ const updateStatusSchema = z.object({
 });
 
 // Define endpoint with authorization middleware happening beforehand
-bugsRouter.post("/", requireAuth, async (req: AuthedRequest, res) => {
+bugsRouter.post("/", ensureCsrfCookie, requireAuth, requireCsrf, async (req: AuthedRequest, res) => {
   // Compare JSON with schema. If parsing unsucessful, return 400 error 
   const parsed = createBugSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -94,7 +95,7 @@ bugsRouter.get("/", requireAuth, async (req: AuthedRequest, res) => {
 });
 
 // Define PATCH route with authorization middleware
-bugsRouter.patch("/:id/status", requireAuth, requireStaff, async (req: AuthedRequest, res) => {
+bugsRouter.patch("/:id/status", ensureCsrfCookie, requireAuth, requireCsrf, requireStaff, async (req: AuthedRequest, res) => {
   const parsed = updateStatusSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid input" });

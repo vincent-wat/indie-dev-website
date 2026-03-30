@@ -11,6 +11,12 @@ import FiltersBar from "./components/FiltersBar";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
+function getCookie(name: string) {
+    if (typeof document === "undefined") return null;
+    const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+    return match ? decodeURIComponent(match[2]) : null;
+  }
+
 export default function BugsPage() {
   const [user, setUser] = useState<AuthResponse["user"] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,10 +41,12 @@ export default function BugsPage() {
   const isStaff = useMemo(() => user?.role === "staff" || user?.role === "admin", [user]);
 
   async function logout(message?: string) {
+    const csrf = getCookie("pippy_csrf") ?? "";
     try {
       await fetch(`${API_BASE}/auth/logout`, {
         method: "POST",
-        credentials: "include"
+        credentials: "include",
+        headers: { "X-CSRF-Token": csrf }
       });
     } catch {
       // ignore
@@ -51,15 +59,21 @@ export default function BugsPage() {
   }
 
   useEffect(() => {
-    (async () => {
+  (async () => {
+    try {
+      await fetch(`${API_BASE}/auth/csrf`, { credentials: "include" });
+    } catch {
+      // ignore
+    }
+
       try {
-        const res = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
-        if (!res.ok) return;
-        const data = (await res.json()) as AuthResponse;
-        setUser(data.user);
-      } catch {
-        // ignore
-      }
+       const res = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
+       if (!res.ok) return;
+       const data = (await res.json()) as AuthResponse;
+       setUser(data.user);
+     } catch {
+       // ignore
+     }
     })();
   }, []);
 
@@ -70,10 +84,14 @@ export default function BugsPage() {
     try {
       const endpoint = mode === "signup" ? "/auth/signup" : "/auth/login";
       const body = mode === "signup" ? { email, password, displayName } : { email, password };
+      const csrf = getCookie("pippy_csrf") ?? "";
 
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json", 
+          "X-CSRF-Token": csrf
+        },
         credentials: "include",
         body: JSON.stringify(body)
       });
@@ -132,6 +150,7 @@ export default function BugsPage() {
   }, [user, statusFilter, severityFilter]);
 
   async function submitBug() {
+    const csrf = getCookie("pippy_csrf") ?? "";
     if (!user) return;
 
     setLoading(true);
@@ -140,7 +159,10 @@ export default function BugsPage() {
       const res = await fetch(`${API_BASE}/playtest/bugs`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrf 
+        },
         body: JSON.stringify({ title, description, severity })
       });
 
@@ -167,6 +189,7 @@ export default function BugsPage() {
   }
 
   async function updateStatus(bugId: string, status: Bug["status"]) {
+    const csrf = getCookie("pippy_auth") ?? "";
     if (!user) return;
 
     setLoading(true);
@@ -175,7 +198,10 @@ export default function BugsPage() {
       const res = await fetch(`${API_BASE}/playtest/bugs/${bugId}/status`, {
         method: "PATCH",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json", 
+          "X-CSRF-Token": csrf
+        },
         body: JSON.stringify({ status })
       });
 
