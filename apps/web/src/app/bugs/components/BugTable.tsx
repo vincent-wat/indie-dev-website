@@ -1,4 +1,3 @@
-import styles from "../bugs.module.css";
 import type { Bug } from "../types";
 
 type Props = {
@@ -8,9 +7,11 @@ type Props = {
 };
 
 export default function BugTable({ bugs, isStaff, onUpdateStatus }: Props) {
+  const gridCols = isStaff ? "grid-cols-[2fr_3fr_1fr_1fr]" : "grid-cols-[2fr_3fr_1fr]";
+
   return (
-    <div className={styles.table}>
-      <div className={`${styles.tableHead} ${isStaff ? styles.grid4 : styles.grid3}`}>
+    <div className="overflow-hidden rounded-xl border border-black/10">
+      <div className={`grid ${gridCols} gap-3 bg-black/5 p-3 font-bold`}>
         <div>Title</div>
         <div>Description</div>
         <div>Status</div>
@@ -18,19 +19,17 @@ export default function BugTable({ bugs, isStaff, onUpdateStatus }: Props) {
       </div>
 
       {bugs.length === 0 ? (
-        <div className={styles.smallNote} style={{ padding: 12 }}>
-          No bug reports yet.
-        </div>
+        <div className="p-3 text-xs text-black/60">No bug reports yet.</div>
       ) : (
         bugs.map((b) => (
-          <div key={b.id} className={`${styles.tableRow} ${isStaff ? styles.grid4 : styles.grid3}`}>
-            <div className={styles.bold}>{b.title}</div>
-            <div className={styles.desc}>{b.description}</div>
+          <div key={b.id} className={`grid ${gridCols} gap-3 border-t border-black/10 p-3`}>
+            <div className="font-extrabold">{b.title}</div>
+            <div className="leading-relaxed text-black/80">{b.description}</div>
 
             <div>
               {isStaff ? (
                 <select
-                  className={styles.select}
+                  className="rounded-xl border border-black/10 px-3 py-2 text-sm"
                   value={b.status}
                   onChange={(e) => onUpdateStatus(b.id, e.target.value as Bug["status"])}
                 >
@@ -42,11 +41,11 @@ export default function BugTable({ bugs, isStaff, onUpdateStatus }: Props) {
                   <option value="closed">closed</option>
                 </select>
               ) : (
-                <span>{b.status}</span>
+                <span className="text-sm text-black/70">{b.status}</span>
               )}
             </div>
 
-            {isStaff && <div>{b.severity}</div>}
+            {isStaff && <div className="text-sm text-black/70">{b.severity}</div>}
           </div>
         ))
       )}

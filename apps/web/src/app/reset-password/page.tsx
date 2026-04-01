@@ -19,10 +19,7 @@ function ResetPasswordInner() {
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit =
-    token.trim().length > 0 &&
-    newPassword.length >= 8 &&
-    newPassword === confirm;
+  const canSubmit = token.trim().length > 0 && newPassword.length >= 8 && newPassword === confirm;
 
   async function submit() {
     setLoading(true);
@@ -61,52 +58,52 @@ function ResetPasswordInner() {
   }
 
   return (
-    <div style={{ maxWidth: 520, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
-      <h1 style={{ margin: 0 }}>Reset password</h1>
+    <div className="mx-auto flex max-w-[520px] flex-col gap-3">
+      <h1 className="m-0 text-3xl font-extrabold">Reset password</h1>
 
       {!token && (
-        <div style={{ color: "crimson" }}>
+        <div className="text-sm font-semibold text-red-600">
           Missing reset token. Please use the link from your email.
         </div>
       )}
 
-      <label style={{ display: "grid", gap: 6 }}>
-        <span>New password (8+ chars)</span>
+      <label className="grid gap-1.5">
+        <span className="text-sm font-semibold">New password (8+ chars)</span>
         <input
           type="password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          style={{ padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
+          className="rounded-xl border border-black/10 px-3 py-2"
         />
       </label>
 
-      <label style={{ display: "grid", gap: 6 }}>
-        <span>Confirm new password</span>
+      <label className="grid gap-1.5">
+        <span className="text-sm font-semibold">Confirm new password</span>
         <input
           type="password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
-          style={{ padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
+          className="rounded-xl border border-black/10 px-3 py-2"
         />
       </label>
 
       <button
         onClick={submit}
         disabled={loading || !canSubmit}
-        style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd", cursor: "pointer", fontWeight: 800 }}
+        className="rounded-xl border border-black/10 px-3 py-2 font-extrabold disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Resetting..." : "Reset password"}
       </button>
 
-      {msg && <div style={{ color: "#1b5e20" }}>{msg}</div>}
-      {error && <div style={{ color: "crimson" }}>{error}</div>}
+      {msg && <div className="text-sm font-semibold text-green-700">{msg}</div>}
+      {error && <div className="text-sm font-semibold text-red-600">{error}</div>}
     </div>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div style={{ padding: 16 }}>Loading...</div>}>
+    <Suspense fallback={<div className="p-4 text-sm text-black/70">Loading...</div>}>
       <ResetPasswordInner />
     </Suspense>
   );

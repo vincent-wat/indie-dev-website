@@ -1,27 +1,27 @@
 export default function AboutPage() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <h1 style={{ margin: 0 }}>About</h1>
+    <div className="flex flex-col gap-4">
+      <h1 className="text-3xl font-extrabold">About</h1>
 
-      <p style={{ margin: 0, lineHeight: 1.6, opacity: 0.85 }}>
-        Pippy Studios is a 2-person indie dev team based in LA. We handle design, engineering, and production
-        end-to-end, with a focus on shipping polished games.
+      <p className="max-w-2xl leading-relaxed text-black/80">
+        Pippy Studios is a 2-person indie dev team based in LA. We handle design, engineering, and production end-to-end
+        with a focus on shipping fun, weird, replayable games.
       </p>
 
-      <h2 style={{ margin: "10px 0 0" }}>Team</h2>
+      <h2 className="pt-2 text-2xl font-extrabold">Team</h2>
 
-      <div style={{ display: "grid", gap: 12 }}>
-        <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 12 }}>
-          <div style={{ fontWeight: 800 }}>Developer 1</div>
-          <div style={{ opacity: 0.8, marginTop: 6 }}>
-            Role/focus: gameplay, systems, tools, etc.
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="rounded-xl border border-black/10 p-4">
+          <div className="text-lg font-extrabold">Developer 1</div>
+          <div className="mt-2 text-black/80">
+            Role/focus: gameplay systems, backend tools, infrastructure, and shipping the thing.
           </div>
         </div>
 
-        <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 12 }}>
-          <div style={{ fontWeight: 800 }}>Developer 2</div>
-          <div style={{ opacity: 0.8, marginTop: 6 }}>
-            Role/focus: art, design, UI, production, etc.
+        <div className="rounded-xl border border-black/10 p-4">
+          <div className="text-lg font-extrabold">Developer 2</div>
+          <div className="mt-2 text-black/80">
+            Role/focus: art, UI/UX, game feel, vibes, and making everything look adorable.
           </div>
         </div>
       </div>

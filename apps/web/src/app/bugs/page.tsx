@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import styles from "./bugs.module.css";
 
 import type { Bug, AuthResponse } from "./types";
 import AuthPanel from "./components/AuthPanel";
@@ -12,10 +11,10 @@ import FiltersBar from "./components/FiltersBar";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 function getCookie(name: string) {
-    if (typeof document === "undefined") return null;
-    const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
-    return match ? decodeURIComponent(match[2]) : null;
-  }
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+  return match ? decodeURIComponent(match[2]) : null;
+}
 
 export default function BugsPage() {
   const [user, setUser] = useState<AuthResponse["user"] | null>(null);
@@ -59,21 +58,21 @@ export default function BugsPage() {
   }
 
   useEffect(() => {
-  (async () => {
-    try {
-      await fetch(`${API_BASE}/auth/csrf`, { credentials: "include" });
-    } catch {
-      // ignore
-    }
+    (async () => {
+      try {
+        await fetch(`${API_BASE}/auth/csrf`, { credentials: "include" });
+      } catch {
+        // ignore
+      }
 
       try {
-       const res = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
-       if (!res.ok) return;
-       const data = (await res.json()) as AuthResponse;
-       setUser(data.user);
-     } catch {
-       // ignore
-     }
+        const res = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
+        if (!res.ok) return;
+        const data = (await res.json()) as AuthResponse;
+        setUser(data.user);
+      } catch {
+        // ignore
+      }
     })();
   }, []);
 
@@ -88,8 +87,8 @@ export default function BugsPage() {
 
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json", 
+        headers: {
+          "Content-Type": "application/json",
           "X-CSRF-Token": csrf
         },
         credentials: "include",
@@ -159,9 +158,9 @@ export default function BugsPage() {
       const res = await fetch(`${API_BASE}/playtest/bugs`, {
         method: "POST",
         credentials: "include",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "X-CSRF-Token": csrf 
+          "X-CSRF-Token": csrf
         },
         body: JSON.stringify({ title, description, severity })
       });
@@ -189,7 +188,7 @@ export default function BugsPage() {
   }
 
   async function updateStatus(bugId: string, status: Bug["status"]) {
-    const csrf = getCookie("pippy_auth") ?? "";
+    const csrf = getCookie("pippy_csrf") ?? "";
     if (!user) return;
 
     setLoading(true);
@@ -198,8 +197,8 @@ export default function BugsPage() {
       const res = await fetch(`${API_BASE}/playtest/bugs/${bugId}/status`, {
         method: "PATCH",
         credentials: "include",
-        headers: { 
-          "Content-Type": "application/json", 
+        headers: {
+          "Content-Type": "application/json",
           "X-CSRF-Token": csrf
         },
         body: JSON.stringify({ status })
@@ -225,7 +224,7 @@ export default function BugsPage() {
 
   if (!user) {
     return (
-      <div className={`${styles.page} ${styles.centered}`}>
+      <div className="mx-auto max-w-[520px]">
         <AuthPanel
           mode={mode}
           setMode={setMode}
@@ -241,7 +240,7 @@ export default function BugsPage() {
         />
 
         {sessionMsg && (
-          <div className={styles.smallNote} style={{ marginTop: 12, textAlign: "center" }}>
+          <div className="mt-3 text-center text-xs text-black/70">
             {sessionMsg}
           </div>
         )}
@@ -250,29 +249,41 @@ export default function BugsPage() {
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.headerRow}>
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className={styles.h1}>Playtest Bugs</h1>
-          <div className={styles.smallNote}>
-            Logged in as <span className={styles.bold}>{user.displayName}</span> ({user.role})
+          <h1 className="m-0 text-3xl font-extrabold">Playtest Bugs</h1>
+          <div className="text-xs text-black/60">
+            Logged in as <span className="font-extrabold">{user.displayName}</span> ({user.role})
           </div>
         </div>
 
-        <div className={styles.rightActions}>
-          <button onClick={() => setShowModal(true)} className={styles.secondaryBtn}>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowModal(true)}
+            className="rounded-xl border border-black/10 px-3 py-2 font-bold"
+          >
             Submit a bug
           </button>
-          <button onClick={() => fetchBugs()} disabled={loading} className={styles.primaryBtn}>
+
+          <button
+            onClick={() => fetchBugs()}
+            disabled={loading}
+            className="rounded-xl border border-black/10 px-3 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-60"
+          >
             Refresh
           </button>
-          <button onClick={() => logout()} className={styles.primaryBtn}>
+
+          <button
+            onClick={() => logout()}
+            className="rounded-xl border border-black/10 px-3 py-2 font-bold"
+          >
             Logout
           </button>
         </div>
       </div>
 
-      {error && <div className={styles.error}>{error}</div>}
+      {error && <div className="text-sm font-semibold text-red-600">{error}</div>}
 
       <FiltersBar
         status={statusFilter}

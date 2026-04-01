@@ -1,4 +1,5 @@
 import { DynaPuff } from "next/font/google";
+import "./globals.css";
 
 export const metadata = {
   title: "Pippy Studios",
@@ -13,26 +14,31 @@ const dynaPuff = DynaPuff({
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body 
-        className={dynaPuff.className}
-        style={{ margin: 0, fontFamily: `"DynaPuff", system-ui, -apple-system, Segoe UI, Roboto, Arial` }}>
-        <header style={{ borderBottom: "1px solid #eee", padding: "12px 16px" }}>
-          <nav style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <a href="/" style={{ fontWeight: 700, textDecoration: "none", color: "inherit" }}>
+      <body
+        className={`${dynaPuff.className} min-h-screen bg-white text-black`}
+        style={{ fontFamily: `"DynaPuff", system-ui, -apple-system, Segoe UI, Roboto, Arial` }}
+      >
+        <header className="border-b border-[#eee] px-4 py-3">
+          <nav className="flex items-center gap-4">
+            <a href="/" className="font-bold no-underline">
               Pippy Studios
             </a>
 
-            <div style={{marginLeft: "auto", display: "flex", gap: 32 }}>
-              <a href="/" style={{ textDecoration: "none", color: "inherit" }}>Home</a>
-              <a href="/about" style={{ textDecoration: "none", color: "inherit" }}>About</a>
-              <a href="/bugs" style={{ textDecoration: "none", color: "inherit" }}>Bugs</a>
+            <div className="ml-auto flex items-center gap-10">
+              <a href="/" className="no-underline hover:underline">
+                Home
+              </a>
+              <a href="/about" className="no-underline hover:underline">
+                About
+              </a>
+              <a href="/bugs" className="no-underline hover:underline">
+                Bugs
+              </a>
             </div>
           </nav>
         </header>
 
-        <main style={{ padding: 16, maxWidth: 1000, margin: "0 auto" }}>
-          {children}
-        </main>
+        <main className="mx-auto max-w-[1000px] px-4 py-4">{children}</main>
       </body>
     </html>
   );

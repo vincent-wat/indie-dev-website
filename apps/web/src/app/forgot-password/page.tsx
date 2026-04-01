@@ -29,7 +29,6 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email })
       });
 
-      // Always show a generic success message (prevents account enumeration)
       if (!res.ok && res.status !== 400) {
         setError("Something went wrong. Try again.");
         return;
@@ -45,31 +44,32 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div style={{ maxWidth: 520, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
-      <h1 style={{ margin: 0 }}>Forgot password</h1>
-      <p style={{ margin: 0, opacity: 0.8, lineHeight: 1.6 }}>
+    <div className="mx-auto flex max-w-[520px] flex-col gap-3">
+      <h1 className="m-0 text-3xl font-extrabold">Forgot password</h1>
+
+      <p className="m-0 leading-relaxed text-black/80">
         Enter your email and we’ll send you a password reset link.
       </p>
 
-      <label style={{ display: "grid", gap: 6 }}>
-        <span>Email</span>
+      <label className="grid gap-1.5">
+        <span className="text-sm font-semibold">Email</span>
         <input
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={{ padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
+          className="rounded-xl border border-black/10 px-3 py-2"
         />
       </label>
 
       <button
         onClick={submit}
         disabled={loading || email.trim().length === 0}
-        style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd", cursor: "pointer", fontWeight: 800 }}
+        className="rounded-xl border border-black/10 px-3 py-2 font-extrabold disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Sending..." : "Send reset link"}
       </button>
 
-      {msg && <div style={{ color: "#1b5e20" }}>{msg}</div>}
-      {error && <div style={{ color: "crimson" }}>{error}</div>}
+      {msg && <div className="text-sm font-semibold text-green-700">{msg}</div>}
+      {error && <div className="text-sm font-semibold text-red-600">{error}</div>}
     </div>
   );
 }

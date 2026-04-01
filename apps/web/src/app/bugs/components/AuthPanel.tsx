@@ -1,5 +1,3 @@
-import styles from "../bugs.module.css";
-
 type Mode = "login" | "signup";
 
 type Props = {
@@ -35,50 +33,60 @@ export default function AuthPanel({
   onSubmit
 }: Props) {
   return (
-    <div className={`${styles.page} ${styles.centered}`}>
-      <h1 className={styles.h1}>Playtest Bugs</h1>
-      <p className={styles.muted}>
+    <div className="mx-auto flex max-w-[520px] flex-col gap-3">
+      <h1 className="m-0 text-3xl font-extrabold">Playtest Bugs</h1>
+
+      <p className="m-0 leading-relaxed text-black/80">
         {mode === "signup"
           ? "Create an account to submit and view bug reports."
           : "Log in to submit and view bug reports."}
       </p>
 
-      <div className={styles.toggleRow}>
+      <div className="flex gap-2">
         <button
           onClick={() => setMode("login")}
-          className={`${styles.toggleBtn} ${mode === "login" ? styles.toggleBtnActive : ""}`}
+          className={`rounded-xl border border-black/10 px-3 py-2 font-bold ${
+            mode === "login" ? "bg-black/5" : "bg-white"
+          }`}
         >
           Login
         </button>
+
         <button
           onClick={() => setMode("signup")}
-          className={`${styles.toggleBtn} ${mode === "signup" ? styles.toggleBtnActive : ""}`}
+          className={`rounded-xl border border-black/10 px-3 py-2 font-bold ${
+            mode === "signup" ? "bg-black/5" : "bg-white"
+          }`}
         >
           Sign up
         </button>
       </div>
 
-      <div className={styles.card}>
+      <div className="grid gap-3 rounded-xl border border-black/10 p-3">
         {mode === "signup" && (
-          <label className={styles.field}>
-            <span>Display name</span>
+          <label className="grid gap-1.5">
+            <span className="text-sm font-semibold">Display name</span>
             <input
-              className={styles.input}
+              className="rounded-xl border border-black/10 px-3 py-2"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
           </label>
         )}
 
-        <label className={styles.field}>
-          <span>Email</span>
-          <input className={styles.input} value={email} onChange={(e) => setEmail(e.target.value)} />
+        <label className="grid gap-1.5">
+          <span className="text-sm font-semibold">Email</span>
+          <input
+            className="rounded-xl border border-black/10 px-3 py-2"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </label>
 
-        <label className={styles.field}>
-          <span>Password</span>
+        <label className="grid gap-1.5">
+          <span className="text-sm font-semibold">Password</span>
           <input
-            className={styles.input}
+            className="rounded-xl border border-black/10 px-3 py-2"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -88,7 +96,7 @@ export default function AuthPanel({
         <button
           onClick={onSubmit}
           disabled={loading || (mode === "signup" && (displayName.trim().length < 2 || password.length < 8))}
-          className={styles.secondaryBtn}
+          className="rounded-xl border border-black/10 px-3 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading
             ? mode === "signup"
@@ -99,14 +107,14 @@ export default function AuthPanel({
               : "Login"}
         </button>
 
-        <div className={styles.smallNote}>
+        <div className="text-xs text-black/60">
           Demo: tester@demo.com / password, staff@demo.com / password — or create your own account.
         </div>
 
-        {error && <div className={styles.error}>{error}</div>}
+        {error && <div className="text-sm font-semibold text-red-600">{error}</div>}
       </div>
 
-      <a href="/forgot-password" style={{ fontSize: 12, opacity: 0.8 }}>
+      <a href="/forgot-password" className="text-xs text-black/70 hover:underline">
         Forgot password?
       </a>
     </div>
