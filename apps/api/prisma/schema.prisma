@@ -20,22 +20,19 @@ enum Role {
 }
 
 model User {
-  id           String      @id @default(uuid())
-  email        String      @unique
-  passwordHash String
-  displayName  String
-  role         Role        @default(playtester)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  bugReports   BugReport[]
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  passwordHash        String
+  displayName         String
+  role                Role                 @default(playtester)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  bugReports          BugReport[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 enum BugStatus {
   new
-  triaged
-  in_progress
-  fixed
-  verified
   closed
 }
 
@@ -65,4 +62,19 @@ model BugReport {
   @@index([status])
   @@index([severity])
   @@index([reporterId])
+}
+
+model PasswordResetToken {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }

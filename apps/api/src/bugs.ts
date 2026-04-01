@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "./db";
 import { requireAuth, AuthedRequest } from "./authMiddleware";
 import { ensureCsrfCookie, requireCsrf } from "./csrf";
+import rateLimit from "express-rate-limit";
 
 // This bugs router defines the playtest bug report endpoints
 
@@ -11,6 +12,13 @@ function requireStaff(req: AuthedRequest, res: any, next: any) {
   if (role === "staff" || role === "admin") return next();
   return res.status(403).json({ error: "Forbidden" });
 }
+
+// Rate limiter to be used specifically for Post/Patch requests
+const bugWriteLimiter = rateLimit({ 
+  windowMs: 60 * 1000, max: 30, 
+  standardHeaders: true, 
+  legacyHeaders: false 
+});
 
 export const bugsRouter = Router();
 
@@ -27,17 +35,17 @@ const createBugSchema = z.object({
 
 // GET
 const listQuerySchema = z.object({
-  status: z.enum(["new", "triaged", "in_progress", "fixed", "verified", "closed"]).optional(),
+  status: z.enum(["new", "closed"]).optional(),
   severity: z.enum(["low", "medium", "high", "critical"]).optional()
 });
 
 // UPDATE
 const updateStatusSchema = z.object({
-  status: z.enum(["new", "triaged", "in_progress", "fixed", "verified", "closed"])
+  status: z.enum(["new", "closed"])
 });
 
 // Define endpoint with authorization middleware happening beforehand
-bugsRouter.post("/", ensureCsrfCookie, requireAuth, requireCsrf, async (req: AuthedRequest, res) => {
+bugsRouter.post("/", bugWriteLimiter, ensureCsrfCookie, requireAuth, requireCsrf, async (req: AuthedRequest, res) => {
   // Compare JSON with schema. If parsing unsucessful, return 400 error 
   const parsed = createBugSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -95,7 +103,7 @@ bugsRouter.get("/", requireAuth, async (req: AuthedRequest, res) => {
 });
 
 // Define PATCH route with authorization middleware
-bugsRouter.patch("/:id/status", ensureCsrfCookie, requireAuth, requireCsrf, requireStaff, async (req: AuthedRequest, res) => {
+bugsRouter.patch("/:id/status", bugWriteLimiter, ensureCsrfCookie, requireAuth, requireCsrf, requireStaff, async (req: AuthedRequest, res) => {
   const parsed = updateStatusSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid input" });

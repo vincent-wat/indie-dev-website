@@ -17,7 +17,7 @@ export type Bug = {
   expectedResult: string | null;
   actualResult: string | null;
   severity: "low" | "medium" | "high" | "critical";
-  status: "new" | "triaged" | "in_progress" | "fixed" | "verified" | "closed";
+  status: "new" | "closed";
   reporterId: string;
   createdAt: string;
   updatedAt: string;

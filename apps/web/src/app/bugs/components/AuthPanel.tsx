@@ -105,6 +105,10 @@ export default function AuthPanel({
 
         {error && <div className={styles.error}>{error}</div>}
       </div>
+
+      <a href="/forgot-password" style={{ fontSize: 12, opacity: 0.8 }}>
+        Forgot password?
+      </a>
     </div>
   );
 }
