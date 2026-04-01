@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ensureCsrfCookie, csrfHeader } from "@/lib/csrf";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-export default function ResetPasswordPage() {
+function ResetPasswordInner() {
   const sp = useSearchParams();
   const router = useRouter();
 
@@ -52,7 +52,6 @@ export default function ResetPasswordPage() {
       setNewPassword("");
       setConfirm("");
 
-      // Optional: send them back to bugs page after a moment
       setTimeout(() => router.push("/bugs"), 800);
     } catch {
       setError("Network error. Try again.");
@@ -102,5 +101,13 @@ export default function ResetPasswordPage() {
       {msg && <div style={{ color: "#1b5e20" }}>{msg}</div>}
       {error && <div style={{ color: "crimson" }}>{error}</div>}
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 16 }}>Loading...</div>}>
+      <ResetPasswordInner />
+    </Suspense>
   );
 }
