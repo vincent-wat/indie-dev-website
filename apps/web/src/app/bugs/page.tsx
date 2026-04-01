@@ -261,7 +261,7 @@ export default function BugsPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setShowModal(true)}
-            className="rounded-xl border border-black/10 px-3 py-2 font-bold"
+            className="btn-primary"
           >
             Submit a bug
           </button>
@@ -269,14 +269,14 @@ export default function BugsPage() {
           <button
             onClick={() => fetchBugs()}
             disabled={loading}
-            className="rounded-xl border border-black/10 px-3 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-primary"
           >
             Refresh
           </button>
 
           <button
             onClick={() => logout()}
-            className="rounded-xl border border-black/10 px-3 py-2 font-bold"
+            className="btn-primary"
           >
             Logout
           </button>

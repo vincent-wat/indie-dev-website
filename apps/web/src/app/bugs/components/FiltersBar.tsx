@@ -49,7 +49,7 @@ export default function FiltersBar({
 
       <button
         onClick={onClear}
-        className="rounded-xl border border-black/10 px-3 py-2 font-extrabold"
+        className="btn-primary"
       >
         Clear
       </button>

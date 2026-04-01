@@ -34,10 +34,6 @@ export default function BugTable({ bugs, isStaff, onUpdateStatus }: Props) {
                   onChange={(e) => onUpdateStatus(b.id, e.target.value as Bug["status"])}
                 >
                   <option value="new">new</option>
-                  <option value="triaged">triaged</option>
-                  <option value="in_progress">in_progress</option>
-                  <option value="fixed">fixed</option>
-                  <option value="verified">verified</option>
                   <option value="closed">closed</option>
                 </select>
               ) : (
