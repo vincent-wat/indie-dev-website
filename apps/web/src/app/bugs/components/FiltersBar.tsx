@@ -54,13 +54,6 @@ export default function FiltersBar({
         Clear
       </button>
 
-      <button
-        onClick={onRefresh}
-        disabled={loading}
-        className="ml-auto rounded-xl border border-black/10 px-3 py-2 font-extrabold disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {loading ? "Loading..." : "Refresh"}
-      </button>
     </div>
   );
 }
